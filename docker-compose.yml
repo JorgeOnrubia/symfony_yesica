@@ -1,0 +1,70 @@
+version: '3'
+services:
+
+  #PHP
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: symfony_yesica
+    container_name: symfony_yesica
+    restart: unless-stopped
+    tty: true
+    environment:
+      VIRTUAL_HOST: pelos.local
+      VIRTUAL_PORT: 3000
+      SERVICE_NAME: symfony_yesica
+      SERVICE_TAGS: dev
+    expose:
+      - 3000
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www/
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  #Nginx
+  webserver:
+    image: nginx:alpine
+    container_name: webserver_symfony_yesica
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL
+  db:
+    image: mysql:5.7.22
+    container_name: db_symfony_yesica
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: yesica_web
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: root
+      #your_mysql_root_password
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+
+#Redes
+networks:
+  app-network:
+    driver: bridge
+#Volumenes
+volumes:
+  dbdata:
+    driver: local
